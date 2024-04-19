@@ -1,5 +1,5 @@
 //jshint esversion:6
-import 'dotenv/config';
+
 import express, { response } from 'express';
 import bodyParser from 'body-parser';
 import { dirname } from "path";
@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import mongoose from 'mongoose';
 import  { ObjectId } from 'mongodb';
-import encrypt from 'mongoose-encryption';
+import md5 from 'md5';
 
 const app = express();
 const port = 3000;
@@ -19,10 +19,6 @@ const userSchema = new mongoose.Schema({
     username : String,
     password : String
 })
-
-//Encryption part
-
-userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password'] } );
 
 //Creating model for the collection
 const userModel_2 = mongoose.model("userDetail", userSchema)
@@ -48,7 +44,8 @@ app.get("/logout", (req, res) => {
 app.post("/register", function(req, res) {
     const newUser = new userModel_2 ({
         username : req.body.username,
-        password : req.body.password
+        //md5 hasing for the password
+        password : md5(req.body.password)
     })
 
     newUser.save()
@@ -64,7 +61,7 @@ app.post("/register", function(req, res) {
 
 app.post("/login", function (req, res) {
     const username = req.body.username;
-    const password = req.body.password;
+    const password = md5(req.body.password); //retrieving password which is in md5 hash format
 
     userModel_2.findOne({ username : username })
         .then( function(data) {
