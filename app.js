@@ -21,6 +21,7 @@ const userSchema = new mongoose.Schema({
 })
 
 //Encryption part
+
 userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password'] } );
 
 //Creating model for the collection
