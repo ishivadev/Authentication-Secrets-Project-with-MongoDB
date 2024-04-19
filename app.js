@@ -7,7 +7,10 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import mongoose from 'mongoose';
 import  { ObjectId } from 'mongodb';
-import md5 from 'md5';
+import bcrypt from 'bcrypt';
+
+//Salt round that will add with the plain text
+const saltRounds = 10;
 
 const app = express();
 const port = 3000;
@@ -41,37 +44,42 @@ app.get("/logout", (req, res) => {
     console.log("The user logout successfully.");
 })
 
-app.post("/register", function(req, res) {
-    const newUser = new userModel_2 ({
-        username : req.body.username,
-        //md5 hasing for the password
-        password : md5(req.body.password)
-    })
 
-    newUser.save()
-        .then(() => {
+app.post("/register", async function(req, res) {
+    //Using bcrypt technique for storing salted password in db
+
+    try {
+        const hash = await bcrypt.hash(req.body.password, saltRounds);
+        const newUser = new userModel_2 ({
+            username : req.body.username,
+            password : hash
+        });
+
+        await newUser.save();
         res.render("secrets.ejs");
         console.log("New user registered successfully.");
-        })
-        .catch(error => {
+    } catch (error) {
         console.log(error.message);
         res.status(500).send("Error registering user.");
-        })
-})
+    }
+});
+
 
 app.post("/login", function (req, res) {
     const username = req.body.username;
-    const password = md5(req.body.password); //retrieving password which is in md5 hash format
+    const password = req.body.password;
 
+    //Retrieving password from db which is stored in bcrypt format
     userModel_2.findOne({ username : username })
         .then( function(data) {
             if(data) {
-                if ( data.password === password ) {
-                    res.render("secrets.ejs")
-                    console.log("User login successfully.");
+                bcrypt.compare(password, data.password, function(err, result) {
+                    if (result) {
+                        res.render("secrets.ejs");
+                        console.log("User login successfully.");
                 } else {
                     console.log("Wrong password, kindly check the password: " + password);
-                }
+                }})
             } else {
                 console.log("Not a valid user details.", '\n', 
                             "Entered username is :" + username, '\n',
@@ -82,8 +90,6 @@ app.post("/login", function (req, res) {
             console.log(err);
         })
 })
-
-
 
 
 app.listen(port, function() {
