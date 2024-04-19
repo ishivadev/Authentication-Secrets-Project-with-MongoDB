@@ -1,5 +1,5 @@
 //jshint esversion:6
-import 'dotenv/config';
+
 import express, { response } from 'express';
 import bodyParser from 'body-parser';
 import { dirname } from "path";
@@ -20,9 +20,6 @@ const userSchema = new mongoose.Schema({
     password : String
 })
 
-//Encryption part
-
-userSchema.plugin(encrypt, { secret: process.env.SECRET, encryptedFields: ['password'] } );
 
 //Creating model for the collection
 const userModel_2 = mongoose.model("userDetail", userSchema)
